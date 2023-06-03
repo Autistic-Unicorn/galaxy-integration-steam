@@ -23,7 +23,7 @@ with open(os.path.join(BASE_DIR, "src", "manifest.json"), "r") as f:
 if sys.platform == 'win32':
     DIST_DIR = os.environ['localappdata'] + '\\GOG.com\\Galaxy\\plugins\\installed'
     PLATFORM = "win32"
-    
+
     if which("py"):
         PYTHON_EXE = "py -3.7"
     else:
@@ -48,9 +48,6 @@ def build(c, output='output', ziparchive=None):
     if os.path.exists(output):
         print('--> Removing {} directory'.format(output))
         rmtree(output)
-
-    print('--> Fixing a pip issue, failing to import `BAR_TYPES` from `pip._internal.cli.progress_bars`')
-    c.run(PYTHON_EXE + ' -m pip install --upgrade pip==22.0.4')
 
     # Firstly dependencies need to be "flattened" with pip-compile,
     # as pip requires --no-deps if --platform is used.
