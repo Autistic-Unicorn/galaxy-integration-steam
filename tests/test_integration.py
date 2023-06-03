@@ -21,6 +21,8 @@ class TCPServer:
 
 @pytest.mark.integration
 def test_integration():
+    # this test request `inv build` to be run first; otherwise the output
+    # directory does not exist and this tests throws an exception
     with open(os.path.join("output", "manifest.json"), "r") as file_:
         manifest = json.load(file_)
 

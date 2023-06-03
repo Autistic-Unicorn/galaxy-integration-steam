@@ -201,6 +201,7 @@ def ClearGeneratedProtobufs(c, genFile = True):
 
 @task
 def test(c):
+    build(c)
     c.run('pytest')
 
 
