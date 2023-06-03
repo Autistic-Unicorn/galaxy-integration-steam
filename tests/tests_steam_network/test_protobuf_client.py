@@ -1,4 +1,5 @@
-from unittest.mock import MagicMock
+from base64 import b64encode
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 import websockets
@@ -7,22 +8,25 @@ from websockets.protocol import State
 
 from steam_network.protocol.protobuf_client import ProtobufClient
 
-
 ACCOUNT_NAME = "john"
-PASSWORD = "testing123"
+PASSWORD = b"testing123"
+ENCIPHERED_PASSWORD = b64encode(PASSWORD)
 TWO_FACTOR = "AbCdEf"
 TOKEN = "TOKEN"
-USED_SERVER_CELL_ID = 0
-MACHINE_ID = bytes('machine_id', 'utf-8')
+CELL_ID = 12121212
+CELL_ID_ENCODED = b"\xfc\xe8\xe3\x05"
+MACHINE_ID = "machine_id"
 OS_VALUE = 1
-SENTRY = None
 PRIVATE_IP = 1
 HOST_NAME = "john pc"
+STEAM_ID = 12345664321
+STEAM_ID_ENCODED = STEAM_ID.to_bytes(8, "little")  # fixed64 are encoded as I64 in protobuf
 PROTOCOL_VERSION = ProtobufClient._MSG_PROTOCOL_VERSION
 CLIENT_PACKAGE_VERSION = ProtobufClient._MSG_CLIENT_PACKAGE_VERSION
 CLIENT_LANGUAGE = "english"
 TWO_FACTOR_TYPE = 'email'
-
+TIMESTAMP = 1672531200  # Sun 1 January 2023 00:00:00 UTC
+TIMESTAMP_ENCODED = b"\x80\x9a\xc3\x9d\x06"  # protobuf uses VARINT encoding
 
 @pytest.fixture
 def websocket():
@@ -41,33 +45,32 @@ async def client(websocket, mocker):
 
 
 @pytest.mark.asyncio
-async def test_log_on_token_message(client, websocket):
+async def test_log_on_token_message(client, websocket, mocker):
     client._get_obfuscated_private_ip = AsyncMock(return_value=PRIVATE_IP)
-    await client.log_on_token(ACCOUNT_NAME, TOKEN, USED_SERVER_CELL_ID, MACHINE_ID, OS_VALUE, SENTRY)
-    msg_to_send = str(websocket.send.call_args[0][0])
-    assert ACCOUNT_NAME in msg_to_send
-    assert TOKEN in msg_to_send
-    assert str(USED_SERVER_CELL_ID) in msg_to_send
-    assert MACHINE_ID.decode('utf-8') in msg_to_send
-    assert str(OS_VALUE) in msg_to_send
-    assert str(PRIVATE_IP) in msg_to_send
-    assert HOST_NAME in msg_to_send
-    assert CLIENT_LANGUAGE in msg_to_send
+    mocker.patch("socket.gethostname", new=MagicMock(return_value=HOST_NAME))
+    await client.send_log_on_token_message(ACCOUNT_NAME, STEAM_ID, TOKEN, CELL_ID, MACHINE_ID.encode('utf-8'), OS_VALUE)
+    msg_to_send = websocket.send.call_args[0][0]
+    assert ACCOUNT_NAME.encode("utf-8") in msg_to_send
+    assert STEAM_ID_ENCODED in msg_to_send
+    assert TOKEN.encode("utf-8") in msg_to_send
+    assert CELL_ID_ENCODED in msg_to_send
+    assert MACHINE_ID.encode("utf-8") in msg_to_send
+    assert OS_VALUE in msg_to_send
+    assert PRIVATE_IP in msg_to_send
+    assert HOST_NAME.encode("utf-8") in msg_to_send
+    assert CLIENT_LANGUAGE.encode("utf-8") in msg_to_send
 
 
 @pytest.mark.asyncio
-async def test_log_on_password_message(client, websocket):
-    client._get_obfuscated_private_ip = AsyncMock(return_value=PRIVATE_IP)
-    await client.log_on_password(ACCOUNT_NAME, PASSWORD, TWO_FACTOR, TWO_FACTOR_TYPE, MACHINE_ID,OS_VALUE, SENTRY)
-    msg_to_send = str(websocket.send.call_args[0][0])
-    assert ACCOUNT_NAME in msg_to_send
-    assert str(USED_SERVER_CELL_ID) in msg_to_send
-    assert MACHINE_ID.decode('utf-8') in msg_to_send
-    assert str(OS_VALUE) in msg_to_send
-    assert str(PRIVATE_IP) in msg_to_send
-    assert HOST_NAME in msg_to_send
-    assert CLIENT_LANGUAGE in msg_to_send
-    assert TWO_FACTOR in msg_to_send
+async def test_log_on_password_message(client, websocket, mocker):
+    mocker.patch("socket.gethostname", new=MagicMock(return_value=HOST_NAME))
+    await client.log_on_password(ACCOUNT_NAME, PASSWORD, TIMESTAMP, OS_VALUE)
+    msg_to_send = websocket.send.call_args[0][0]
+    assert ACCOUNT_NAME.encode("utf-8") in msg_to_send
+    assert ENCIPHERED_PASSWORD in msg_to_send
+    assert OS_VALUE in msg_to_send
+    assert HOST_NAME.encode("utf-8") in msg_to_send
+    assert TIMESTAMP_ENCODED in msg_to_send
 
 
 @pytest.mark.asyncio
@@ -76,8 +79,8 @@ async def test_ensure_open_exception(client, socket_state, monkeypatch, mocker):
 
     mocker.patch('asyncio.shield', AsyncMock(return_value=MagicMock()))
     client = ProtobufClient(websockets.WebSocketCommonProtocol())
-    client._socket.close_code = 1
-    client._socket.close_reason = "Close reason"
+    type(client._socket).close_code = PropertyMock(return_value=1)
+    type(client._socket).close_reason = PropertyMock(return_value="Close reason")
     client._socket.close_connection_task = MagicMock()
     client._socket.state = socket_state
 

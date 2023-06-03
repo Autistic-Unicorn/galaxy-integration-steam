@@ -216,7 +216,7 @@ class ProtobufClient:
         else:
             logger.warning("NO RSA HANDLER SET!")
 
-    async def log_on_password(self, account_name, enciphered_password: str, timestamp: int, os_value):
+    async def log_on_password(self, account_name, enciphered_password: bytes, timestamp: int, os_value):
         friendly_name: str = sock.gethostname() + " (GOG Galaxy)"
 
         #device details is readonly. So we can't do this the easy way.
@@ -308,7 +308,7 @@ class ProtobufClient:
         else:
             logger.warning("NO POLL STATUS HANDLER SET!")
 
-    #old auth flow. Still necessary for remaining logged in and confirming after doing the new auth flow. 
+    #old auth flow. Still necessary for remaining logged in and confirming after doing the new auth flow.
     async def _get_obfuscated_private_ip(self) -> int:
         logger.info('Websocket state is: %s' % self._socket.state.name)
         await self._socket.ensure_open()
@@ -326,7 +326,7 @@ class ProtobufClient:
         #ClientLanguage = "english";
         #Username = pollResponse.AccountName,
         #AccessToken = pollResponse.RefreshToken,
-        #ShouldSavePassword = True #err on side of caution in case this not being set causes them to ignore access token. then try false. 
+        #ShouldSavePassword = True #err on side of caution in case this not being set causes them to ignore access token. then try false.
         """
             var logon = new ClientMsgProtobuf<CMsgClientLogon>( EMsg.ClientLogon );
 
@@ -358,7 +358,7 @@ class ProtobufClient:
             logon.Body.password = details.Password; //Null
             logon.Body.should_remember_password = details.ShouldRememberPassword; //false
 
-            logon.Body.protocol_version = MsgClientLogon.CurrentProtocol; 
+            logon.Body.protocol_version = MsgClientLogon.CurrentProtocol;
             logon.Body.client_os_type = ( uint )details.ClientOSType; //
             logon.Body.client_language = details.ClientLanguage;
             logon.Body.cell_id = details.CellID ?? Client.Configuration.CellID //
@@ -371,7 +371,7 @@ class ProtobufClient:
             logon.Body.machine_name = details.MachineName;
             logon.Body.machine_id = HardwareUtils.GetMachineID( Client.Configuration.MachineInfoProvider );
 
-            // steam guard 
+            // steam guard
             logon.Body.auth_code = details.AuthCode;
             logon.Body.two_factor_code = details.TwoFactorCode;
 
