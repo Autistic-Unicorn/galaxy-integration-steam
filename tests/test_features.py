@@ -43,9 +43,8 @@ def steam_network_features():
 
 
 async def test_features_default(
-    create_plugin, local_features, steam_network_features, patch_config_location
+    create_plugin, local_features, steam_network_features
 ):
-    patch_config_location()
     plugin = create_plugin()
     assert isinstance(plugin.features, list)
     assert set(plugin.features) == local_features | steam_network_features
@@ -56,10 +55,3 @@ async def test_features_steam_network(
 ):
     plugin = create_plugin_with_backend()
     assert set(plugin.features) == local_features | steam_network_features
-
-
-async def test_features_public_profiles(
-    create_plugin_with_backend, local_features, public_profiles_features
-):
-    plugin = create_plugin_with_backend()
-    assert set(plugin.features) == local_features | public_profiles_features

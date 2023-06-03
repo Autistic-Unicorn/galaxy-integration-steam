@@ -141,15 +141,6 @@ def register_mock_backend(mocker):
     return fn
 
 
-@pytest.fixture
-def patch_config_location(tmp_path, mocker):
-    def fn(filename="steam_user_config.ini") -> pathlib.Path:
-        tmp_config_path = tmp_path / filename
-        return mocker.patch("plugin.USER_CONFIG_LOCATION", tmp_config_path)
-
-    return fn
-
-
 # load nested conftest files
 # fixtures and hooks are applied in the relevant package scope only
 pytest_plugins = ('tests.tests_steam_network')
