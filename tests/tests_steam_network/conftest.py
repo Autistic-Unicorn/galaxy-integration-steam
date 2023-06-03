@@ -3,8 +3,6 @@ from unittest.mock import MagicMock
 import pytest
 from galaxy.unittest.mock import AsyncMock
 
-from plugin import BackendMode
-
 
 @pytest.fixture
 def websocket_client():
@@ -26,7 +24,7 @@ def create_sn_plugin(create_plugin_with_backend, mocker, websocket_client):
     """sn stands for SteamNetwork"""
     async def function(cache):
         mocker.patch('backend_steam_network.WebSocketClient', return_value=websocket_client)
-        plugin = create_plugin_with_backend(BackendMode.SteamNetwork, cache=cache)
+        plugin = create_plugin_with_backend(cache=cache)
         return plugin
 
     return function

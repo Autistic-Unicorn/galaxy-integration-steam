@@ -22,7 +22,7 @@ from steam_network.games_cache import GamesCache
 from steam_network.stats_cache import StatsCache
 from steam_network.times_cache import TimesCache
 from steam_network.user_info_cache import UserInfoCache
-from steam_network.ownership_ticket_cache import OwnershipTicketCache
+from steam_network.authentication_cache import AuthenticationCache
 
 
 ACCOUNT_NAME = "john"
@@ -85,6 +85,11 @@ def times_cache():
 
 
 @pytest.fixture
+def auth_cache():
+    return MagicMock(AuthenticationCache)
+
+
+@pytest.fixture
 def translations_cache():
     return dict()
 
@@ -104,11 +109,6 @@ def local_machine_cache():
 
 
 @pytest.fixture
-def ownership_ticket_cache():
-    return MagicMock(OwnershipTicketCache)
-
-
-@pytest.fixture
 async def client(
     websocket_list,
     friends_cache,
@@ -116,9 +116,9 @@ async def client(
     translations_cache,
     stats_cache,
     times_cache,
+    auth_cache,
     user_info_cache,
     local_machine_cache,
-    ownership_ticket_cache,
 ):
     return WebSocketClient(
         websocket_list,
@@ -128,9 +128,9 @@ async def client(
         translations_cache,
         stats_cache,
         times_cache,
+        auth_cache,
         user_info_cache,
         local_machine_cache,
-        ownership_ticket_cache,
     )
 
 
@@ -254,7 +254,7 @@ async def test_servers_cache_failure(client, protocol_client, websocket_list):
     [
         asyncio.TimeoutError(),
         IOError(),
-        websockets.InvalidURI("wss://websocket_1"),
+        websockets.InvalidURI("wss://websocket_1", "invalid URI"),
         websockets.InvalidHandshake(),
     ],
 )
@@ -283,7 +283,7 @@ async def test_connect_error(
     [
         asyncio.TimeoutError(),
         IOError(),
-        websockets.InvalidURI("wss://websocket_1"),
+        websockets.InvalidURI("wss://websocket_1",  "invalid URI"),
         websockets.InvalidHandshake(),
     ],
 )

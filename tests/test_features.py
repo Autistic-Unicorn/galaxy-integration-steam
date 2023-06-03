@@ -1,8 +1,6 @@
 from galaxy.api.consts import Feature
 import pytest
 
-from plugin import BackendMode
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -56,12 +54,12 @@ async def test_features_default(
 async def test_features_steam_network(
     create_plugin_with_backend, local_features, steam_network_features
 ):
-    plugin = create_plugin_with_backend(BackendMode.SteamNetwork)
+    plugin = create_plugin_with_backend()
     assert set(plugin.features) == local_features | steam_network_features
 
 
 async def test_features_public_profiles(
     create_plugin_with_backend, local_features, public_profiles_features
 ):
-    plugin = create_plugin_with_backend(BackendMode.PublicProfiles)
+    plugin = create_plugin_with_backend()
     assert set(plugin.features) == local_features | public_profiles_features

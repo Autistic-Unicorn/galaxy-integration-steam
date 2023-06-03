@@ -69,7 +69,6 @@ async def create_plugin(mocker, http_client_mock, profile_checker):
 
         mocker.patch('plugin.HttpClient', return_value=http_client_mock)
         mocker.patch("plugin.local_games_list", return_value=[])
-        mocker.patch("plugin.UserProfileChecker", return_value=profile_checker)
         plugin = SteamPlugin(MagicMock(), writer, None)
         plugin.lost_authentication = Mock(return_value=None)
         type(plugin).persistent_cache = PropertyMock(return_value=cache)
@@ -129,19 +128,15 @@ def register_mock_backend(mocker):
     """
     This fixture helps to introduce a new/artificial backend mode
     along with relevant `BackendInterface` mock implementation.
-    Note: to unregister existing backend modes patch BACKEND_MAP with `clear=True`.
     """
     def fn(mode):
         """
         :returns mock of `BackendInterface` class
         """
-        name = str(mode) + " backend mock" 
+        name = str(mode) + " backend mock"
         instance_mock = Mock(spec=BackendInterface, name=name)
         instance_mock.authenticate = AsyncMock()
         class_mock = Mock(return_value=instance_mock, name=f"{name} class")
-        mocker.patch.dict("plugin.BACKEND_MAP", {
-            mode: class_mock
-        })
         return class_mock
     return fn
 

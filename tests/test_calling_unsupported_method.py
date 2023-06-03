@@ -1,5 +1,4 @@
 from unittest.mock import Mock
-import enum
 import functools
 import inspect
 
@@ -8,10 +7,6 @@ from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
 
 from backend_interface import BackendInterface
-
-
-class BackendModeMock(enum.Enum):
-    NothingImplementedMode = 'dummy'
 
 
 class BackendInterfaceDummyImpl(BackendInterface):
@@ -23,14 +18,6 @@ class BackendInterfaceDummyImpl(BackendInterface):
 
     def register_auth_lost_callback(self, callback):
         pass
-
-
-@pytest.fixture
-def patched_backend_map(mocker):
-    BACKEND_MAP = {
-        BackendModeMock.NothingImplementedMode: BackendInterfaceDummyImpl,
-    }
-    return mocker.patch.dict("plugin.BACKEND_MAP", BACKEND_MAP, clear=True)
 
 
 class NothingImplementedPlugin(Plugin):
@@ -56,12 +43,12 @@ async def result_or_exception_type(func):
 
 
 @pytest.mark.asyncio
-async def test_calling_not_implemented_import_complete_method(create_plugin_with_backend, patched_backend_map):
+async def test_calling_not_implemented_import_complete_method(create_plugin_with_backend):
     """
     Use case: normal Plugins API usage
     Expected: parent Plugin method is called as it is normally w/o using BackendInterface
     """
-    plugin = create_plugin_with_backend(BackendModeMock.NothingImplementedMode)
+    plugin = create_plugin_with_backend()
 
     assert \
         await result_or_exception_type(plugin.game_times_import_complete) == \
@@ -69,13 +56,13 @@ async def test_calling_not_implemented_import_complete_method(create_plugin_with
 
 
 @pytest.mark.asyncio
-async def test_calling_unsupported_async_method(create_plugin_with_backend, patched_backend_map):
+async def test_calling_unsupported_async_method(create_plugin_with_backend):
     """
     Use case: switching backend to the one that has fewer features when plugin runs
     causes Galaxy to call methods unsupported in the new backend
     Expected: parent Plugin method is called as it is normally w/o using BackendInterface
     """
-    plugin = create_plugin_with_backend(BackendModeMock.NothingImplementedMode)
+    plugin = create_plugin_with_backend()
 
     assert \
         await result_or_exception_type(plugin.get_owned_games) == \
@@ -83,10 +70,10 @@ async def test_calling_unsupported_async_method(create_plugin_with_backend, patc
 
 
 @pytest.mark.asyncio
-async def test_calling_unsupported_prepare_context_method(create_plugin_with_backend, patched_backend_map):
-    plugin = create_plugin_with_backend(BackendModeMock.NothingImplementedMode)
+async def test_calling_unsupported_prepare_context_method(create_plugin_with_backend):
+    plugin = create_plugin_with_backend()
     user_ids = ['aid', 'bid']
-    
+
     with pytest.raises(NotImplementedError):
         await plugin.prepare_user_presence_context(user_ids)
 
@@ -97,8 +84,8 @@ async def test_calling_unsupported_prepare_context_method(create_plugin_with_bac
         'tick', 'shutdown'
     ]
 )
-async def test_calling_plugin_methods(create_plugin_with_backend, patched_backend_map, method):
-    plugin = create_plugin_with_backend(BackendModeMock.NothingImplementedMode)
+async def test_calling_plugin_methods(create_plugin_with_backend, method):
+    plugin = create_plugin_with_backend()
     plugin_method = getattr(plugin, method)
     not_imp_plugin_method = getattr(NothingImplementedPlugin(), method)
 
@@ -123,20 +110,16 @@ async def test_not_implemented_prepare_context_method_for_supported_feature(
     prepare_context_method,
     core_method,
 ):
-    
+
     class BackendInterfaceDummyCopy(BackendInterfaceDummyImpl):
         pass
 
     setattr(BackendInterfaceDummyCopy, core_method, lambda *args: None)
 
     one_feature_backend_mode = 'one_feature'
-    BACKEND_MAP = {
-        one_feature_backend_mode: BackendInterfaceDummyCopy,
-    }
-    mocker.patch.dict("plugin.BACKEND_MAP", BACKEND_MAP, clear=True)
     plugin = create_plugin_with_backend(one_feature_backend_mode)
     importer_items = []
-    
+
     try:
         await getattr(plugin, prepare_context_method)(importer_items)
     except (NotImplementedError, AttributeError) as e:
