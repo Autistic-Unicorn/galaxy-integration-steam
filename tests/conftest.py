@@ -157,4 +157,4 @@ def patch_config_location(tmp_path, mocker):
 
 # load nested conftest files
 # fixtures and hooks are applied in the relevant package scope only
-pytest_plugins = ('tests.tests_public_profiles', 'tests.tests_steam_network')
+pytest_plugins = ('tests.tests_steam_network')
